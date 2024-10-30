@@ -1,11 +1,20 @@
 // Import dependencies
 const express = require("express");
 const axios = require("axios");
-const qs = require("qs"); // Import qs for encoding data
+const qs = require("qs");
+
+const Stripe = require("stripe");
+const dotenv = require("dotenv");
+
+dotenv.config();
 
 const app = express();
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.set("view engine", "ejs");
+app.set("views", __dirname);
 
 // Utility function to pause execution
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -34,9 +43,15 @@ async function makeApiRequest(url, data) {
   throw new Error("Max retries exceeded");
 }
 
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+const stripePublicKey = process.env.STRIPE_PUBLIC_KEY;
+const stripe = new Stripe(stripeSecretKey);
+
 // Endpoint to serve the HTML file
 app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/index.html");
+  res.render(__dirname, {
+    stripePublicKey: stripePublicKey,
+  });
 });
 
 // Endpoint to handle form submission and create a client in Flowlu

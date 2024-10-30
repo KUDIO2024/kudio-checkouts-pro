@@ -4,10 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Service Checkout</title>
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="script-src 'self' 'https://js.stripe.com/v3/' 'unsafe-inline'"
-    />
+
     <style>
       * {
         box-sizing: border-box;
@@ -225,6 +222,12 @@
       p {
         margin: 5px 0;
       }
+      #card-element {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
     </style>
     <script src="https://js.stripe.com/v3/"></script>
   </head>
@@ -375,7 +378,10 @@
           </div>
 
           <div class="section" id="payment-details">
-            <h2 class="flex justify-space-between">
+            <h2
+              class="flex justify-space-between"
+              onclick="showNextStep('payment-details')"
+            >
               Payment
               <span class="flex items-center collapse-span">
                 <svg
@@ -530,6 +536,7 @@
     <script>
       const nextButton = document.getElementById("next-button");
       const paymentButton = document.getElementById("payment-button");
+      const whatsAppButton = document.getElementById("whatsapp-btn");
 
       const detailForm = document.getElementById("detail-form");
 
@@ -552,8 +559,7 @@
       const hosting_price = 15;
       const development_price = 450;
 
-      const stripePublicKey =
-        "pk_live_51IZk6CLWcouNeT9dEsKDBTHFbAkgA0Rw2tgDPtQGoSh3o9O4iIau65jUfwScLfle9ZsFctQ46j51wrRMN3dK0HlX009Sq9G9oR";
+      const stripePublicKey = "<%= stripePublicKey %>";
       const stripe = Stripe(stripePublicKey);
 
       const elements = stripe.elements();
@@ -613,6 +619,93 @@
         }
       });
 
+      paymentButton.addEventListener("click", async function () {
+        const { paymentMethod, error } = await stripe.createPaymentMethod({
+          type: "card",
+          card: cardElement,
+          billing_details: {
+            name: document.getElementById("cardHolderName").value,
+          },
+        });
+
+        if (error) {
+          console.error("Error creating payment method:", error);
+          alert("Error creating payment method:", error.message);
+          document.getElementById("card-errors").innerText = error.message;
+          return;
+        } else {
+          const totalPrice = parseInt(grandTotal * 100);
+          console.log("totalprice stripe ===============>", totalPrice);
+
+          const response = await fetch(`/create-payment-intent`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              paymentMethodId: paymentMethod.id,
+              price: totalPrice,
+            }),
+          });
+
+          const { clientSecret, error } = await response.json();
+          console.log("received client secret:", clientSecret);
+
+          if (error) {
+            alert("Error creating payment intent");
+            return;
+          } else {
+            const { error, paymentIntent } = await stripe.confirmCardPayment(
+              clientSecret,
+              {
+                payment_method: {
+                  card: cardElement,
+                  billing_details: {
+                    name: document.getElementById("cardHolderName").value,
+                  },
+                },
+              }
+            );
+
+            if (error) {
+              alert("Payment failed.", error.message);
+              return;
+            } else if (paymentIntent.status === "succeeded") {
+              console.log("Payment succeeded!\n", paymentIntent);
+
+              // const response = await fetch(`/register-domain`, {
+              //   method: "POST",
+              //   headers: {
+              //     "Content-Type": "application/json",
+              //   },
+              //   body: JSON.stringify({
+              //     domain: selectedDomainName,
+              //     customer_id: customerID,
+              //     plan_id: selectedEmailPlan,
+              //   }),
+              // });
+
+              // const result = await response.json();
+
+              // console.log(result);
+
+              // if (result.status) {
+              //   hideLoader();
+              //   showSuccessNotification();
+              // } else {
+              //   hideLoader();
+              //   alert("Domain registration failed: " + result.error);
+              // }
+              showNextStep("confirmation-details");
+            }
+          }
+        }
+      });
+
+      whatsAppButton.addEventListener("click", function () {
+        alert("redirect whatsapp");
+      });
+
       hostingOptions.forEach((option) => {
         option.addEventListener("change", function () {
           if (this.value === "monthly") {
@@ -644,10 +737,6 @@
         nextCycleAmounts[0].innerText = hosting_price;
         nextCycleAmounts[1].innerText = hosting_price;
       }
-
-      paymentButton.addEventListener("click", function () {
-        showNextStep("confirmation-details");
-      });
     </script>
   </body>
 </html>
