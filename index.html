@@ -395,25 +395,27 @@
                 </svg>
               </span>
             </h2>
-            <div class="section-body px-2">
-              <!-- <form id="stripePaymentForm"> -->
-              <div class="form-group">
-                <input
-                  type="text"
-                  id="cardHolderName"
-                  class="stripe-input"
-                  placeholder="Card Holder Name"
-                  required
-                />
+            <div class="section-body">
+              <div class="px-2">
+                <!-- <form id="stripePaymentForm"> -->
+                <div class="form-group">
+                  <input
+                    type="text"
+                    id="cardHolderName"
+                    class="stripe-input"
+                    placeholder="Card Holder Name"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <div id="card-element" class="stripe-input"></div>
+                </div>
+                <button class="next-button" id="payment-button">
+                  Pay & Register Domain
+                </button>
+                <div id="card-errors" role="alert"></div>
+                <!-- </form> -->
               </div>
-              <div class="form-group">
-                <div id="card-element" class="stripe-input"></div>
-              </div>
-              <button class="next-button" id="payment-button">
-                Pay & Register Domain
-              </button>
-              <div id="card-errors" role="alert"></div>
-              <!-- </form> -->
             </div>
           </div>
 
@@ -526,8 +528,11 @@
     </div>
 
     <script>
-      // Handle section transitions
       const nextButton = document.getElementById("next-button");
+      const paymentButton = document.getElementById("payment-button");
+
+      const detailForm = document.getElementById("detail-form");
+
       const hostingOptions = document.querySelectorAll('input[name="hosting"]');
       const hostingPrice = document.getElementById("hosting-detail-value");
       const developmentPrice = document.getElementById(
@@ -536,6 +541,7 @@
       const grandTotal = document.getElementById("total-detail-value");
       const nextCycleAmounts =
         document.getElementsByClassName("next-cycle-amount");
+
       const steps = [
         "choose-hosting",
         "your-details",
@@ -543,16 +549,82 @@
         "confirmation-details",
       ];
 
-      // const stripePublicKey =
-      //   "pk_live_51IZk6CLWcouNeT9dEsKDBTHFbAkgA0Rw2tgDPtQGoSh3o9O4iIau65jUfwScLfle9ZsFctQ46j51wrRMN3dK0HlX009Sq9G9oR";
-      // const stripe = Stripe(stripePublicKey);
+      const hosting_price = 15;
+      const development_price = 450;
 
-      // const elements = stripe.elements();
-      // const cardElement = elements.create("card");
-      // cardElement.mount("#card-element");
+      const stripePublicKey =
+        "pk_live_51IZk6CLWcouNeT9dEsKDBTHFbAkgA0Rw2tgDPtQGoSh3o9O4iIau65jUfwScLfle9ZsFctQ46j51wrRMN3dK0HlX009Sq9G9oR";
+      const stripe = Stripe(stripePublicKey);
+
+      const elements = stripe.elements();
+      const cardElement = elements.create("card");
+      cardElement.mount("#card-element");
 
       nextButton.addEventListener("click", function () {
         showNextStep("your-details");
+      });
+
+      detailForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const formData = {
+          first_name: document.querySelector('input[name="first_name"]').value,
+          last_name: document.querySelector('input[name="last_name"]').value,
+          email: document.querySelector('input[name="email"]').value,
+          phone: document.querySelector('input[name="phone"]').value,
+          billing_country: document.querySelector(
+            'input[name="billing_country"]'
+          ).value,
+          billing_state: document.querySelector('input[name="billing_state"]')
+            .value,
+          billing_city: document.querySelector('input[name="billing_city"]')
+            .value,
+          billing_zip: document.querySelector('input[name="billing_zip"]')
+            .value,
+          billing_address_line_1: document.querySelector(
+            'input[name="billing_address_line_1"]'
+          ).value,
+          billing_address_line_2: document.querySelector(
+            'input[name="billing_address_line_2"]'
+          ).value,
+        };
+
+        try {
+          const response = await fetch("/api/create-client", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(formData),
+          });
+
+          const result = await response.json();
+
+          if (response.ok) {
+            alert("Client created successfully in Flowlu!");
+
+            showNextStep("payment-details");
+          } else {
+            alert("Failed to create client in Flowlu.");
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          alert("An error occurred while creating the client.");
+        }
+      });
+
+      hostingOptions.forEach((option) => {
+        option.addEventListener("change", function () {
+          if (this.value === "monthly") {
+            hosting_price = 15;
+            development_price = 450;
+          } else {
+            hosting_price = 150;
+            development_price = 369;
+          }
+
+          udpate_price();
+        });
       });
 
       function showNextStep(newStep) {
@@ -565,84 +637,17 @@
         }, 400);
       }
 
-      document
-        .getElementById("detail-form")
-        .addEventListener("submit", async function (event) {
-          event.preventDefault(); // Prevent default form submission
+      function udpate_price() {
+        hostingPrice.innerText = hosting_price;
+        developmentPrice.innerText = development_price;
+        grandTotal.innerText = hosting_price + development_price;
+        nextCycleAmounts[0].innerText = hosting_price;
+        nextCycleAmounts[1].innerText = hosting_price;
+      }
 
-          // Capture form data
-          const formData = {
-            first_name: document.querySelector('input[name="first_name"]')
-              .value,
-            last_name: document.querySelector('input[name="last_name"]').value,
-            email: document.querySelector('input[name="email"]').value,
-            phone: document.querySelector('input[name="phone"]').value,
-            billing_country: document.querySelector(
-              'input[name="billing_country"]'
-            ).value,
-            billing_state: document.querySelector('input[name="billing_state"]')
-              .value,
-            billing_city: document.querySelector('input[name="billing_city"]')
-              .value,
-            billing_zip: document.querySelector('input[name="billing_zip"]')
-              .value,
-            billing_address_line_1: document.querySelector(
-              'input[name="billing_address_line_1"]'
-            ).value,
-            billing_address_line_2: document.querySelector(
-              'input[name="billing_address_line_2"]'
-            ).value,
-          };
-
-          // Send form data to backend to create a client
-          try {
-            const response = await fetch("/api/create-client", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(formData),
-            });
-
-            const result = await response.json();
-            if (response.ok) {
-              alert("Client created successfully in Flowlu!");
-
-              showNextStep("payment-details");
-            } else {
-              alert("Failed to create client in Flowlu.");
-            }
-          } catch (error) {
-            console.error("Error:", error);
-            alert("An error occurred while creating the client.");
-          }
-        });
-
-      hostingOptions.forEach((option) => {
-        option.addEventListener("change", function () {
-          if (this.value === "monthly") {
-            hostingPrice.innerText = "15.00";
-            developmentPrice.innerText = "450.00";
-            grandTotal.innerText = "465.00";
-            nextCycleAmounts[0].innerText = "15.00";
-            nextCycleAmounts[1].innerText = "15.00";
-          } else {
-            hostingPrice.innerText = "150.00";
-            developmentPrice.innerText = "369.00"; // Adjusted for yearly price
-            grandTotal.innerText = "519.00"; // Update grand total
-            nextCycleAmounts[0].innerText = "150.00"; // Adjust for yearly charge
-            nextCycleAmounts[1].innerText = "150.00"; // Adjust for yearly charge
-          }
-        });
+      paymentButton.addEventListener("click", function () {
+        showNextStep("confirmation-details");
       });
-
-      // Payment button event (to be implemented with Stripe integration)
-      document
-        .getElementById("payment-button")
-        .addEventListener("click", function () {
-          // Add Stripe payment integration logic here
-          showNextStep("confirmation-details");
-        });
     </script>
   </body>
 </html>
