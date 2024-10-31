@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Checkout Page with Flowlu Integration</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+      }
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #f0f7ff;
+        height: 100vh;
+        padding: 20px;
+      }
+      .container {
+        display: flex;
+        width: 100%;
+        max-width: 1200px;
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 10px;
+      }
+      /* Left Column */
+      .left-column {
+        flex: 1;
+        margin-right: 20px;
+      }
+      .accordion-header {
+        background-color: #e0ebf7;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        padding: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: bold;
+        font-size: 1.1em;
+        color: #333;
+        cursor: pointer;
+      }
+      .accordion-header::after {
+        content: "▼";
+        font-size: 1em;
+        color: #666;
+        margin-left: auto;
+      }
+      .accordion-header.active::after {
+        content: "▲";
+      }
+      .accordion-content {
+        display: none;
+        background-color: #ffffff;
+        padding: 20px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+      .accordion-header.active + .accordion-content {
+        display: block;
+      }
+      .hosting-options {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .hosting-option {
+        background-color: #f6f6f6;
+        border-radius: 8px;
+        padding: 40px 90px;
+        display: flex;
+        align-items: center;
+        font-size: 1.1em;
+        color: #545454;
+        cursor: pointer;
+        border: 5px solid #e8e8e8; /* Adds a 2px border with the color #cfcece */
+      }
+      .hosting-option input {
+        margin-right: 10px;
+        transform: scale(1.2); /* Increase size - adjust as needed */
+      }
+      .details-form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .details-form input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      .next-btn {
+        background-color: #004d40;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        cursor: pointer;
+        border-radius: 5px;
+        font-size: 1em;
+        grid-column: span 2;
+        position: relative;
+      }
+      .loading-spinner {
+        display: none;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #fff;
+        border-top: 2px solid #004d40;
+        border-radius: 50%;
+        position: absolute;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        animation: spin 0.7s linear infinite;
+      }
+      .next-btn.loading .loading-spinner {
+        display: inline-block;
+      }
+      #cardHolderName {
+        width: 100%;
+        font-size: 1em;
+        padding: 1.2%;
+        margin-bottom: 1%;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      #card-element {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      .agreement-text {
+        font-size: 0.85em;
+        color: #333;
+        line-height: 1.6;
+        margin-bottom: 20px;
+      }
+      /* Right Column (Fixed) */
+      .right-column {
+        width: 300px;
+        position: sticky;
+        top: 20px;
+      }
+      .summary-box {
+        background-color: #f8f8f8;
+        border-radius: 5px;
+        padding: 30px;
+        margin-bottom: 10px;
+        border: 1px solid #cfcece; /* Adds a 2px border with the color #cfcece */
+      }
+      .summary-title {
+        font-weight: bold;
+        font-size: 1.2em;
+        margin-bottom: 10px;
+      }
+      .summary-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        font-size: 0.9em;
+      }
+      .summary-total {
+        font-weight: bold;
+        font-size: 1.1em;
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+        border-top: 1px solid #ccc;
+        padding-top: 10px;
+      }
+      .hosting-details {
+        font-size: 0.85em;
+        padding: 30px;
+        background-color: #f8f8f8;
+        border-radius: 5px;
+        border: 1px solid #cfcece; /* Adds a 2px border with the color #cfcece */
+      }
+      .congratulation-text {
+        font-size: 1.2em;
+        color: #333;
+        line-height: 1.6;
+        margin-bottom: 10px;
+      }
+      #congratulation {
+        width: 80%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Left Column -->
+      <div class="left-column">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          Choose Hosting
+        </div>
+        <div class="accordion-content">
+          <div class="hosting-options">
+            <label class="hosting-option">
+              <input
+                type="radio"
+                name="hosting"
+                value="15"
+                onclick="updateCheckout('Lite Hosting (Monthly)', 15, 'Website Development', 450)"
+              />
+              £15 /Per Month
+            </label>
+            <label class="hosting-option">
+              <input
+                type="radio"
+                name="hosting"
+                value="150"
+                onclick="updateCheckout('Lite Hosting (Yearly)', 150, 'Website Development', 369)"
+              />
+              £150 /Per Year
+            </label>
+          </div>
+          <button type="button" class="next-btn" onclick="nextSection(this)">
+            Next
+          </button>
+        </div>
+
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          Your Details
+        </div>
+        <div class="accordion-content" id="your-details">
+          <form id="checkout-form" class="details-form">
+            <input
+              type="text"
+              name="first_name"
+              placeholder="First Name"
+              required
+            />
+            <input
+              type="text"
+              name="last_name"
+              placeholder="Last Name"
+              required
+            />
+            <input type="email" name="email" placeholder="Email" required />
+            <input type="text" name="phone" placeholder="Phone" required />
+            <input
+              type="text"
+              name="billing_address_line_1"
+              placeholder="Address Line 1"
+              required
+            />
+            <input
+              type="text"
+              name="billing_address_line_2"
+              placeholder="Address Line 2"
+            />
+            <input
+              type="text"
+              name="billing_city"
+              placeholder="City"
+              required
+            />
+            <input
+              type="text"
+              name="billing_state"
+              placeholder="State/Region"
+              required
+            />
+            <input
+              type="text"
+              name="billing_zip"
+              placeholder="Postal Code"
+              required
+            />
+            <input
+              type="text"
+              name="billing_country"
+              placeholder="Country"
+              required
+            />
+            <button
+              type="button"
+              id="next-button"
+              class="next-btn"
+              onclick="submitFormWithLoading(this)"
+            >
+              Next
+              <div class="loading-spinner"></div>
+            </button>
+          </form>
+        </div>
+
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          Agreement
+        </div>
+        <div class="accordion-content">
+          <p class="agreement-text">
+            At KUDIO Digital Agency, we take pride in delivering fully
+            functional, high-quality websites. We are committed to ensuring that
+            each website is thoroughly tested and optimised to meet your
+            business needs before going live. However, once the website is
+            handed over, KUDIO Digital Agency cannot be held responsible for any
+            changes made by the client or third parties that may affect its
+            functionality or content. This includes any accidental deletions or
+            modifications.
+            <br /><br />
+            Clients are responsible for keeping their billing information up to
+            date to avoid any disruption in hosting services. Failure to meet
+            payment deadlines will result in service suspension. Please note,
+            KUDIO Digital Agency has the right to add a late payment fee of £10
+            to your outstanding payment for the month period. Please be aware
+            that you will incur a late fee on each month's outstanding payment.
+            <br /><br />
+            Please read full T&C's
+            <a href="https://kudio.co.uk/terms-conditions" target="_blank"
+              >here</a
+            >.
+          </p>
+          <button type="button" class="next-btn" onclick="nextSection(this)">
+            Next
+          </button>
+        </div>
+
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          Payment
+        </div>
+        <div class="accordion-content">
+          <div class="form-group">
+            <input
+              type="text"
+              id="cardHolderName"
+              class="stripe-input"
+              placeholder="Card Holder Name"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <div id="card-element" class="stripe-input"></div>
+          </div>
+          <button class="next-btn" id="payment-button" style="margin-top: 1%">
+            Pay & Register Domain
+            <div class="loading-spinner"></div>
+          </button>
+          <!-- Content for Payment -->
+        </div>
+
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          Confirmation
+        </div>
+        <div class="accordion-content" id="congratulation">
+          <p class="congratulation-text">
+            Thank you! Your project has been received and and paid. A project
+            manager will be in touch shortly, keep an eye on your emails
+          </p>
+          <p class="congratulation-text">Invoice Number: KDG10155</p>
+          <p class="congratulation-text">Project Name: www.kudio.co.uk</p>
+          <p class="congratulation-text">Project Handler: Leone Cverna</p>
+          <button class="next-btn" id="whatsapp-button" style="margin-top: 1%">
+            <a
+              href="https://api.whatsapp.com/message/QFIAYJTGIQOHP1?autoload=1&app_absent=0"
+              target="_blank"
+              style="text-decoration: none; color: white"
+            >
+              Send WhatsApp Message
+            </a>
+          </button>
+          <!-- Content for Confirmation -->
+        </div>
+      </div>
+
+      <!-- Right Column (Fixed) -->
+      <div class="right-column">
+        <div class="summary-box">
+          <div class="summary-title">Your Checkout</div>
+          <div id="summary-items">
+            <!-- Dynamic summary items go here -->
+          </div>
+          <div class="summary-total">
+            <span>Today's Grand Total</span>
+            <span id="grand-total">£0.00</span>
+          </div>
+        </div>
+        <div class="hosting-details">
+          <strong>Subscription / Hosting Details</strong><br />
+          In next cycle, you'll be charged the selected amount and from that
+          date, you'll continue to be charged that amount each subsequent period
+          for as long as your subscription stays active.
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const stripePublicKey = "<%= stripePublicKey %>";
+      const stripe = Stripe(stripePublicKey);
+
+      const elements = stripe.elements();
+      const cardElement = elements.create("card");
+      cardElement.mount("#card-element");
+
+      const isRegistered = 0;
+
+      document
+        .getElementById("payment-button")
+        .addEventListener("click", async () => {
+          const button = document.getElementById("payment-button");
+          button.classList.add("loading");
+
+          const { paymentMethod, error } = await stripe.createPaymentMethod({
+            type: "card",
+            card: cardElement,
+            billing_details: { name: cardHolderName },
+          });
+
+          if (error) {
+            alert(error.message);
+            button.classList.remove("loading");
+            return;
+          }
+
+          const grandTotal = document.getElementById("grand-total").innerText;
+          const totalPrice = parseFloat(grandTotal.replace("£", "")).toFixed(2);
+
+          if (!totalPrice) {
+            alert("Please choose your hosting option.");
+            button.classList.remove("loading");
+            return;
+          }
+
+          if (!isRegistered) {
+            alert("Please register your details");
+            button.classList.remove("loading");
+            return;
+          }
+
+          try {
+            const response = await fetch("/api/process-payment", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ paymentMethod, totalPrice }),
+            });
+
+            const { clientSecret, error } = await response.json();
+            console.log("received client secret:", clientSecret);
+
+            if (error) {
+              button.classList.remove("loading");
+              alert("Error creating payment intent");
+              return;
+            } else {
+              const { error, paymentIntent } = await stripe.confirmCardPayment(
+                clientSecret,
+                {
+                  payment_method: {
+                    card: cardElement,
+                    billing_details: {
+                      name: document.getElementById("cardHolderName").value,
+                    },
+                  },
+                }
+              );
+
+              if (error) {
+                button.classList.remove("loading");
+                alert("Payment failed.", error.message);
+                return;
+              } else if (paymentIntent.status === "succeeded") {
+                button.classList.remove("loading");
+                console.log("Payment succeeded!\n", paymentIntent);
+                nextSection(button);
+              }
+            }
+          } catch (error) {
+            console.error("Error:", error);
+            alert("An error occurred while processing the payment.");
+            button.classList.remove("loading");
+          }
+        });
+
+      function toggleAccordion(header) {
+        const activeClass = "active";
+        const content = header.nextElementSibling;
+        header.classList.toggle(activeClass);
+        content.classList.toggle("show");
+      }
+
+      async function submitFormWithLoading(button) {
+        button.classList.add("loading"); // Show loading spinner
+
+        // Capture form data
+        const formData = {
+          first_name: document.querySelector('input[name="first_name"]').value,
+          last_name: document.querySelector('input[name="last_name"]').value,
+          email: document.querySelector('input[name="email"]').value,
+          phone: document.querySelector('input[name="phone"]').value,
+          billing_country: document.querySelector(
+            'input[name="billing_country"]'
+          ).value,
+          billing_state: document.querySelector('input[name="billing_state"]')
+            .value,
+          billing_city: document.querySelector('input[name="billing_city"]')
+            .value,
+          billing_zip: document.querySelector('input[name="billing_zip"]')
+            .value,
+          billing_address_line_1: document.querySelector(
+            'input[name="billing_address_line_1"]'
+          ).value,
+          billing_address_line_2: document.querySelector(
+            'input[name="billing_address_line_2"]'
+          ).value,
+        };
+
+        // Send data to backend to create a client
+        try {
+          const response = await fetch("/api/create-client", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(formData),
+          });
+
+          const result = await response.json();
+          button.classList.remove("loading"); // Hide loading spinner
+
+          if (response.ok) {
+            alert("Client created successfully in Flowlu!");
+            isRegistered = 1;
+            nextSection(button); // Move to the next section
+          } else {
+            alert("Failed to create client in Flowlu.");
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          alert("An error occurred while creating the client.");
+          button.classList.remove("loading"); // Hide loading spinner on error
+        }
+      }
+
+      function nextSection(button) {
+        const currentContent = button.closest(".accordion-content");
+        const currentHeader = currentContent.previousElementSibling;
+
+        // Close current section
+        currentHeader.classList.remove("active");
+        currentContent.classList.remove("show");
+
+        // Open next section
+        let nextHeader = currentHeader.nextElementSibling.nextElementSibling;
+        while (
+          nextHeader &&
+          !nextHeader.classList.contains("accordion-header")
+        ) {
+          nextHeader = nextHeader.nextElementSibling;
+        }
+        if (nextHeader) {
+          nextHeader.classList.add("active");
+          nextHeader.nextElementSibling.classList.add("show");
+        }
+      }
+
+      function updateCheckout(hostingName, hostingPrice, devName, devPrice) {
+        const summaryItems = document.getElementById("summary-items");
+        summaryItems.innerHTML = `
+                <div class="summary-item">
+                    <span>${hostingName}</span>
+                    <span>£${hostingPrice}</span>
+                </div>
+                <div class="summary-item">
+                    <span>${devName}</span>
+                    <span>£${devPrice}</span>
+                </div>
+            `;
+        const grandTotal = hostingPrice + devPrice;
+        document.getElementById(
+          "grand-total"
+        ).innerText = `£${grandTotal.toFixed(2)}`;
+      }
+    </script>
+  </body>
+</html>

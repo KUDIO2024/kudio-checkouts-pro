@@ -49,7 +49,7 @@ const stripe = new Stripe(stripeSecretKey);
 
 // Endpoint to serve the HTML file
 app.get("/", (req, res) => {
-  res.render(__dirname, {
+  res.render("index_new", {
     stripePublicKey: stripePublicKey,
   });
 });
@@ -153,6 +153,37 @@ app.post("/api/create-client", async (req, res) => {
     res
       .status(500)
       .json({ error: "Failed to create client or project in Flowlu." });
+  }
+});
+
+app.post("/api/process-payment", async (req, res) => {
+  const { paymentMethod, totalPrice } = req.body;
+
+  console.log("=================> create payment intent ", req.body);
+
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: totalPrice * 100,
+      currency: "gbp",
+      payment_method: paymentMethod.id,
+      confirm: true,
+      metadata: { country: "GB" },
+      automatic_payment_methods: {
+        enabled: true,
+        allow_redirects: "never",
+      },
+    });
+
+    console.log("============> Payment Intent: ", paymentIntent);
+
+    if (paymentIntent.status === "requires_action") {
+      res.json({ clientSecret: paymentIntent.client_secret });
+    } else {
+      res.json({ error: "Payment intent failed." });
+    }
+  } catch (error) {
+    console.log("Error creating payment intent:", error);
+    res.status(500).json({ error: "Payment processing failed." });
   }
 });
 
