@@ -377,6 +377,10 @@
           </button>
           <!-- Content for Confirmation -->
         </div>
+
+        <button class="next-btn" id="testButton">
+          Take the list of invoices
+        </button>
       </div>
 
       <!-- Right Column (Fixed) -->
@@ -408,7 +412,46 @@
       const cardElement = elements.create("card");
       cardElement.mount("#card-element");
 
-      const isRegistered = 0;
+      let grandTotal = 0;
+      let customerName = "";
+      let cliendId = 0;
+      let projectId = 0;
+
+      let isRegistered = 0;
+
+      document
+        .getElementById("testButton")
+        .addEventListener("click", async () => {
+          try {
+            const response = await fetch("/api/test-api", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
+
+            const data = await response.json();
+            console.log(data);
+          } catch (error) {
+            console.error("Error:", error);
+            alert("An error occurred while fetching the invoice list.");
+          }
+        });
+
+      async function createInvoice(status_id) {
+        try {
+          const response = await fetch("/api/create-invoice", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ status_id }),
+          });
+        } catch (error) {
+          console.error("Error:", error);
+          alert("An error occurred while fetching the invoice list.");
+        }
+      }
 
       document
         .getElementById("payment-button")
@@ -479,6 +522,7 @@
               } else if (paymentIntent.status === "succeeded") {
                 button.classList.remove("loading");
                 console.log("Payment succeeded!\n", paymentIntent);
+                // createInvoice((status_id = 40));
                 nextSection(button);
               }
             }
@@ -499,8 +543,14 @@
       async function submitFormWithLoading(button) {
         button.classList.add("loading"); // Show loading spinner
 
+        if (!grandTotal) {
+          alert("Please choose your hosting option.");
+          button.classList.remove("loading");
+          return;
+        }
+
         // Capture form data
-        const formData = {
+        const clientData = {
           first_name: document.querySelector('input[name="first_name"]').value,
           last_name: document.querySelector('input[name="last_name"]').value,
           email: document.querySelector('input[name="email"]').value,
@@ -522,6 +572,11 @@
           ).value,
         };
 
+        const totalData = { grandTotal };
+        const formData = { ...clientData, ...totalData };
+        console.log("Submitting form with loading:", formData);
+        customerName = clientData.first_name + " " + clientData.last_name;
+
         // Send data to backend to create a client
         try {
           const response = await fetch("/api/create-client", {
@@ -533,17 +588,21 @@
           });
 
           const result = await response.json();
+          clientId = result.cliendId;
+          projectId = result.projectId;
+          console.log("Received result:", result);
           button.classList.remove("loading"); // Hide loading spinner
 
           if (response.ok) {
             alert("Client created successfully in Flowlu!");
             isRegistered = 1;
+            button.classList.remove("loading");
             nextSection(button); // Move to the next section
           } else {
             alert("Failed to create client in Flowlu.");
           }
         } catch (error) {
-          console.error("Error:", error);
+          // console.error("Error:", error);
           alert("An error occurred while creating the client.");
           button.classList.remove("loading"); // Hide loading spinner on error
         }
@@ -574,16 +633,16 @@
       function updateCheckout(hostingName, hostingPrice, devName, devPrice) {
         const summaryItems = document.getElementById("summary-items");
         summaryItems.innerHTML = `
-                <div class="summary-item">
-                    <span>${hostingName}</span>
-                    <span>£${hostingPrice}</span>
-                </div>
-                <div class="summary-item">
-                    <span>${devName}</span>
-                    <span>£${devPrice}</span>
-                </div>
-            `;
-        const grandTotal = hostingPrice + devPrice;
+                      <div class="summary-item">
+                          <span>${hostingName}</span>
+                          <span>£${hostingPrice}</span>
+                      </div>
+                      <div class="summary-item">
+                          <span>${devName}</span>
+                          <span>£${devPrice}</span>
+                      </div>
+                  `;
+        grandTotal = hostingPrice + devPrice;
         document.getElementById(
           "grand-total"
         ).innerText = `£${grandTotal.toFixed(2)}`;
