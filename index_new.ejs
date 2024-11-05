@@ -944,6 +944,8 @@
       let isRegistered = 0;
       let customerID = 0;
       let username = "";
+      let gDevPrice = 0;
+      let gHostingPrice = 0;
 
       const basicEmailCheckbox = document.getElementById("basicEmail");
       const standardEmailCheckbox = document.getElementById("standardEmail");
@@ -1084,25 +1086,6 @@
           '.registrant-form-container input[id="postCode"]'
         ).value = customerData.billing_zip ? customerData.billing_zip : "";
       }
-
-      document
-        .getElementById("testButton")
-        .addEventListener("click", async () => {
-          try {
-            const response = await fetch("/api/test-api", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-            });
-
-            const data = await response.json();
-            console.log(data);
-          } catch (error) {
-            console.error("Error:", error);
-            alert("An error occurred while fetching the invoice list.");
-          }
-        });
 
       async function createInvoice(status_id) {
         try {
@@ -1578,9 +1561,6 @@
           nextHeader.nextElementSibling.classList.add("show");
         }
       }
-
-      let gHostingPrice = 0;
-      let gDevPrice = 0;
 
       function updateCheckout(hostingName, hostingPrice, devName, devPrice) {
         gHostingPrice = hostingPrice;
