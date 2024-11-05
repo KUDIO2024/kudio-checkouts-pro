@@ -348,9 +348,6 @@
           width: 100%;
           margin-right: 0;
         }
-        .details-form {
-          grid-template-columns: 1fr;
-        }
         .accordion-header {
           font-size: 1.2em;
         }
@@ -400,13 +397,6 @@
         padding: 5px;
         border: 1px solid #ccc;
         border-radius: 4px;
-      }
-
-      .confirmation-container {
-        max-width: 600px;
-        width: 90%; /* Adjust to fit within the screen size */
-        margin: 0 auto;
-        padding: 2%;
       }
 
       .email-hosting {
@@ -817,6 +807,23 @@
               Confirm
             </button>
           </div>
+
+          <button
+            id="skipDomain"
+            onclick="nextSection(this)"
+            style="
+              padding: 1em;
+              background-color: #003b44;
+              color: white;
+              border: 0px;
+              border-radius: 5px;
+              cursor: pointer;
+              font-size: 1em;
+              margin-top: 2%;
+            "
+          >
+            Skip
+          </button>
         </div>
 
         <div class="accordion-header" onclick="toggleAccordion(this)">
@@ -867,7 +874,7 @@
             <div id="card-element" class="stripe-input"></div>
           </div>
           <button class="next-btn" id="payment-button" style="margin-top: 1%">
-            Pay & Register Domain
+            Pay
             <div class="loading-spinner"></div>
           </button>
           <!-- Content for Payment -->
@@ -878,7 +885,7 @@
         </div>
         <div class="accordion-content" id="congratulation">
           <p class="congratulation-text">
-            Thank you! Your project has been received and and paid. A project
+            Thank you! Your project has been received and paid. A project
             manager will be in touch shortly, keep an eye on your emails
           </p>
           <p class="congratulation-text" id="project-domain"></p>
@@ -987,6 +994,8 @@
           document.getElementById(
             "grand-total"
           ).innerText = `£${grandTotal.toFixed(2)}`;
+          document.getElementById("payment-button").innerText =
+            "Pay £" + grandTotal.toFixed(2);
         });
 
       basicEmailCheckbox.addEventListener("change", function () {
@@ -1584,6 +1593,8 @@
         document.getElementById(
           "grand-total"
         ).innerText = `£${grandTotal.toFixed(2)}`;
+        document.getElementById("payment-button").innerText =
+          "Pay £" + grandTotal.toFixed(2);
       }
 
       function showContainer(id) {
