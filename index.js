@@ -25,6 +25,10 @@ let clientId = 0;
 let projectId = 0;
 let clientName = "";
 let grandTotal = 0;
+let selectedDomainPrice = 0,
+  selectedEmailPrice = 0,
+  gHostingPrice = 0,
+  gDevPrice = 0;
 
 dotenv.config();
 
@@ -373,6 +377,30 @@ app.post("/api/test-api", async (req, res) => {
   res.json(taskResponse.data);
 });
 
+app.post("/api/modify-client", async (req, res) => {
+  let description = `Customer selected the option for Lite Hosting £${gHostingPrice}, Website Development £${gDevPrice}, Domain £${selectedDomainPrice} and Email Hosting £${selectedEmailPrice}`;
+  try {
+    const clientResponse = await makeApiRequest(
+      `https://kudio.flowlu.com/api/v1/module/crm/account/update/${clientId}?api_key=RmFLYnowblNWNXp5eXh6UDBPNGF5ZXdVOW1UUjdlekxfMTExMjc5`,
+      {
+        type: 2,
+        description,
+      }
+    );
+    if (!clientResponse.data.response) {
+      throw new Error(
+        "Client creation failed: " + JSON.stringify(clientResponse.data)
+      );
+    }
+    console.log("Client updated successfully", clientResponse.data);
+  } catch (error) {
+    console.error(
+      "Error creating client or project:",
+      error.response ? error.response.data : error.message
+    );
+  }
+});
+
 // Endpoint to handle form submission and create a client in Flowlu
 app.post("/api/create-client", async (req, res) => {
   // console.log(req.body);
@@ -395,10 +423,10 @@ app.post("/api/create-client", async (req, res) => {
   console.log("total price: ", grandTotal);
   if (grandTotal == 465) {
     description =
-      "Customer selected monthly option for Lite Hosting £15 and Website Development £450";
+      "Customer selected the option for Lite Hosting £15 and Website Development £450";
   } else if (grandTotal == 519) {
     description =
-      "Customer selected monthly option for Lite Hosting £150 and Website Development £369";
+      "Customer selected the option for Lite Hosting £150 and Website Development £369";
   }
   console.log("Description: " + description);
   clientName = first_name + " " + last_name;
@@ -582,6 +610,9 @@ async function createInvoice(
 
 app.post("/api/process-payment", async (req, res) => {
   const { paymentMethod, totalPrice } = req.body;
+
+  ({ selectedDomainPrice, selectedEmailPrice, gHostingPrice, gDevPrice } =
+    req.body);
 
   console.log("=================> create payment intent ", req.body);
 

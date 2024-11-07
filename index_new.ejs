@@ -911,6 +911,12 @@
             </a>
           </button>
         </div>
+
+        <!-- <div class="button-group">
+          <button class="next-btn" onclick="modifyUserDescription()">
+            Test
+          </button>
+        </div> -->
       </div>
 
       <!-- Right Column (Fixed) -->
@@ -963,6 +969,23 @@
       const basicEmailCheckbox = document.getElementById("basicEmail");
       const standardEmailCheckbox = document.getElementById("standardEmail");
       const businessEmailCheckbox = document.getElementById("businessEmail");
+
+      async function modifyUserDescription() {
+        try {
+          const response = await fetch("/api/modify-client", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+          const data = await response.json();
+          console.log(data);
+          return true;
+        } catch (error) {
+          console.error("Error:", error);
+          return false;
+        }
+      }
 
       function nextSectionPayment() {
         nextSection();
@@ -1454,7 +1477,14 @@
               headers: {
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({ paymentMethod, totalPrice }),
+              body: JSON.stringify({
+                paymentMethod,
+                totalPrice,
+                selectedDomainPrice,
+                selectedEmailPrice,
+                gHostingPrice,
+                gDevPrice,
+              }),
             });
 
             const { clientSecret, error } = await response.json();
@@ -1484,6 +1514,9 @@
               } else if (paymentIntent.status === "succeeded") {
                 please.classList.remove("loading");
                 console.log("Payment succeeded!\n", paymentIntent);
+
+                const modifyUserResult = await modifyUserDescription();
+                console.log(modifyUserResult);
 
                 const response = await fetch(`/register-domain`, {
                   method: "POST",
