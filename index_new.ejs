@@ -1699,15 +1699,6 @@
         const container = document.getElementById(id);
         container.style.display = "none";
       }
-<script>
-  function sendHeightToParent() {
-    const height = document.body.scrollHeight;
-    window.parent.postMessage({ height }, "*");
-  }
-
-  // Send height on load and whenever the content changes
-  window.onload = sendHeightToParent;
-  window.onresize = sendHeightToParent;
     </script>
   </body>
 </html>
