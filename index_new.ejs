@@ -1446,7 +1446,7 @@
           please.classList.add("loading");
 
           const { paymentMethod, error } = await stripe.createPaymentMethod({
-            type: "card", "klarna",
+            type: "card",
             card: cardElement,
             billing_details: { name: cardHolderName },
           });
