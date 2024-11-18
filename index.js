@@ -186,11 +186,7 @@ app.post("/register-domain", async (req, res) => {
   const response = await registerDomain(domain, customer_id, plan_id);
 
   // domainRegisterResult = await response.json();
-  console.log(
-    "===========> register status and error ",
-    response.status,
-    response.error
-  );
+  console.log("===========> register status and error ", response);
   res.json(response);
 });
 
@@ -393,11 +389,13 @@ app.post("/api/modify-client", async (req, res) => {
       );
     }
     console.log("Client updated successfully", clientResponse.data);
+    res.json({ status: true });
   } catch (error) {
     console.error(
       "Error creating client or project:",
       error.response ? error.response.data : error.message
     );
+    res.json({ status: false });
   }
 });
 
@@ -633,6 +631,8 @@ app.post("/api/process-payment", async (req, res) => {
 
     if (paymentIntent.status === "requires_action") {
       res.json({ clientSecret: paymentIntent.client_secret });
+    } else if (paymentIntent.status === "succeeded") {
+      res.json({ payment_succeed: true });
     } else {
       res.json({ error: "Payment intent failed." });
     }
