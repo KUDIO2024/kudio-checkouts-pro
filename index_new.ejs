@@ -496,7 +496,7 @@
                 type="radio"
                 name="hosting"
                 value="19"
-                onclick="updateCheckout('Pro Hosting (Monthly)', 19, 'Website Development', 675)"
+                onclick="updateCheckout('Premium Hosting (Monthly)', 19, 'Website Development', 675)"
               />
               £19 /Per Month
             </label>
@@ -505,7 +505,7 @@
                 type="radio"
                 name="hosting"
                 value="185"
-                onclick="updateCheckout('Pro Hosting (Yearly)', 185, 'Website Development', 549)"
+                onclick="updateCheckout('Premium Hosting (Yearly)', 185, 'Website Development', 549)"
               />
               £185 /Per Year
             </label>
@@ -956,6 +956,7 @@
       let cliendId = 0;
       let projectId = 0;
       let selectedDomainName = "";
+      let gHostingName = "";
       let selectedDomainPrice = 0;
       let selectedEmailPrice = 0;
       let selectedEmailPlan = 0;
@@ -965,6 +966,7 @@
       let username = "";
       let gDevPrice = 0;
       let gHostingPrice = 0;
+      let selectedEmailPlanString = "";
 
       const basicEmailCheckbox = document.getElementById("basicEmail");
       const standardEmailCheckbox = document.getElementById("standardEmail");
@@ -996,7 +998,7 @@
         .addEventListener("click", (e) => {
           nextSection(e.target);
           const summaryItems = document.getElementById("domain-email");
-          let selectedEmailPlanString = "";
+          selectedEmailPlanString = "";
           switch (selectedEmailPlan) {
             case 47:
               selectedEmailPlanString = "Basic Email";
@@ -1491,6 +1493,9 @@
                 totalPrice,
                 selectedDomainPrice,
                 selectedEmailPrice,
+                selectedDomainName,
+                selectedEmailPlanString,
+                gHostingName,
                 gHostingPrice,
                 gDevPrice,
               }),
@@ -1720,6 +1725,7 @@
       });
 
       function updateCheckout(hostingName, hostingPrice, devName, devPrice) {
+        gHostingName = hostingName;
         gHostingPrice = hostingPrice;
         gDevPrice = devPrice;
         const summaryItems = document.getElementById("summary-items");
